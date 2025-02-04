@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
-const socket = io("https://my-backend-nd2o.onrender.com");
+const socket = io("http://localhost:5000");
 
 const VideoCall = () => {
   const [stream, setStream] = useState(null);
@@ -11,6 +11,7 @@ const VideoCall = () => {
   const [joining, setJoining] = useState(false);
   const [micMuted, setMicMuted] = useState(false);
   const [videoOff, setVideoOff] = useState(false);
+  const [userJoined, setUserJoined] = useState(false);
   const myVideoRef = useRef();
   const userVideoRef = useRef();
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ const VideoCall = () => {
   };
 
   const handleUserConnected = () => {
+    setUserJoined(true);
     const peer = createPeer();
     setPeerConnection(peer);
   };
@@ -78,6 +80,7 @@ const VideoCall = () => {
   };
 
   const handleReceiveOffer = async (data) => {
+    setUserJoined(true);
     const peer = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
@@ -147,16 +150,20 @@ const VideoCall = () => {
           <button onClick={() => navigator.clipboard.writeText(window.location.href)}>Copy Link</button>
           <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
             <video ref={myVideoRef} autoPlay muted playsInline style={{ width: "40%", display: videoOff ? "none" : "block" }} />
-            <video ref={userVideoRef} autoPlay playsInline style={{ width: "40%" }} />
+            {userJoined ? (
+              <video ref={userVideoRef} autoPlay playsInline style={{ width: "40%" }} />
+            ) : (
+              <p>Waiting for another user to join...</p>
+            )}
           </div>
 
           {/* Control Buttons */}
           <div style={{ marginTop: "20px" }}>
             <button onClick={toggleMic} style={{ marginRight: "10px" }}>
-              {micMuted ? "Unmute Mic" : "Mute Mic"}
+              {micMuted ? "🎤 Unmute" : "🔇 Mute"}
             </button>
             <button onClick={toggleVideo}>
-              {videoOff ? "Turn On Camera" : "Turn Off Camera"}
+              {videoOff ? "📹 Turn On" : "📷 Turn Off"}
             </button>
           </div>
         </div>
