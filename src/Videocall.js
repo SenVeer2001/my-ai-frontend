@@ -9,13 +9,14 @@ const VideoCall = () => {
   const [peerConnection, setPeerConnection] = useState(null);
   const [roomId, setRoomId] = useState("");
   const [joining, setJoining] = useState(false);
+  const [micMuted, setMicMuted] = useState(false);
+  const [videoOff, setVideoOff] = useState(false);
   const myVideoRef = useRef();
   const userVideoRef = useRef();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    // Get room ID from URL if available
     const roomFromURL = searchParams.get("room");
     if (roomFromURL) {
       setRoomId(roomFromURL);
@@ -37,7 +38,7 @@ const VideoCall = () => {
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then((currentStream) => {
         setStream(currentStream);
-        myVideoRef.current.srcObject = currentStream;
+        if (myVideoRef.current) myVideoRef.current.srcObject = currentStream;
       });
 
     socket.on("user-connected", handleUserConnected);
@@ -108,6 +109,22 @@ const VideoCall = () => {
     peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
   };
 
+  // Toggle Microphone
+  const toggleMic = () => {
+    stream?.getAudioTracks().forEach(track => {
+      track.enabled = !track.enabled;
+    });
+    setMicMuted(!micMuted);
+  };
+
+  // Toggle Video
+  const toggleVideo = () => {
+    stream?.getVideoTracks().forEach(track => {
+      track.enabled = !track.enabled;
+    });
+    setVideoOff(!videoOff);
+  };
+
   return (
     <div style={{ textAlign: "center", padding: "20px" }}>
       <h2>React WebRTC Video Call</h2>
@@ -129,8 +146,18 @@ const VideoCall = () => {
           <p>Share this Room ID: <strong>{roomId}</strong></p>
           <button onClick={() => navigator.clipboard.writeText(window.location.href)}>Copy Link</button>
           <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
-            <video ref={myVideoRef} autoPlay muted playsInline style={{ width: "40%" }} />
+            <video ref={myVideoRef} autoPlay muted playsInline style={{ width: "40%", display: videoOff ? "none" : "block" }} />
             <video ref={userVideoRef} autoPlay playsInline style={{ width: "40%" }} />
+          </div>
+
+          {/* Control Buttons */}
+          <div style={{ marginTop: "20px" }}>
+            <button onClick={toggleMic} style={{ marginRight: "10px" }}>
+              {micMuted ? "Unmute Mic" : "Mute Mic"}
+            </button>
+            <button onClick={toggleVideo}>
+              {videoOff ? "Turn On Camera" : "Turn Off Camera"}
+            </button>
           </div>
         </div>
       )}
